@@ -151,7 +151,7 @@ def CalculateStats(tableTraining,flag_saved):
     '''
     if flag_saved:
         Dict_Stats_saved = {'T1': (69.41,228.16),
-                      'T1ce' : (74.58,250.80),
+                      'T1 ce' : (74.58,250.80),
                       'T2' : (76.65,243.62),
                       'FLAIR' : (41.87,122.41)}
         return Dict_Stats_saved
@@ -201,7 +201,7 @@ def CalculateStats(tableTraining,flag_saved):
 
     # create dictionary
     Dict_Stats = {'T1': (T1_mean,T1_std),
-                  'T1ce' : (T1_ce_mean,T1ce_std),
+                  'T1 ce' : (T1_ce_mean,T1ce_std),
                   'T2' : (T2_mean,T2_std),
                   'FLAIR' : (FLAIR_mean,FLAIR_std)}
     

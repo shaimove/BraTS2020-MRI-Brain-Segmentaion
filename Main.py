@@ -2,18 +2,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from tqdm import tqdm
-import os
-import nibabel as nib
 import torch
 from torch.utils import data
-from torchvision import transforms
 
 import model
 import utils
+import MetricAndLoss
 from Dataset import DatasetMRI
 from Log import ClassificationLog
-
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -34,21 +30,17 @@ tableTraining = tableTraining.iloc[:num_training]
 Dict_stats = utils.CalculateStats(tableTraining,True)
 
 
-#%% Create dataset and data loader
-# Define transformation and data augmentation
-transform = transforms.Compose([transforms.ToTensor(),
-    transforms.Normalize(mean=[mean],std=[std])])
-
+#%% Create dataset and data loade
 # define batch size
 batch_size_train = 1
 batch_size_validation = 1
 
 # define dataset and dataloader for training
-train_dataset = DatasetMRI(folder_training,classes,'Training',transform=transform)
+train_dataset = DatasetMRI(tableTraining,Dict_stats)
 train_loader = data.DataLoader(train_dataset,batch_size=batch_size_train,shuffle=True)
 
 # define dataset and dataloader for validation
-validation_dataset = DatasetMRI(folder_validation,classes,'Validation',transform=transform)
+validation_dataset = DatasetMRI(tableValidation,Dict_stats)
 validation_loader = data.DataLoader(train_dataset,batch_size=batch_size_validation,shuffle=True)
 
 
@@ -66,6 +58,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # define loss function 
 criterion = torch.nn.CrossEntropyLoss()
+criterion = MetricAndLoss.DiceLoss()
 
 # initiate logs
 trainLog = ClassificationLog()
@@ -86,17 +79,21 @@ for epoch in range(num_epochs):
     
     for batch in train_loader:
         # get batch images and labels
-        inputs = batch['image'].to(device)
-        labels = batch['label'].to(device)
+        T1 = batch['T1'].to(device)
+        T1_ce = batch['T1 ce'].to(device)
+        T2 = batch['T2'].to(device)
+        FLAIR = batch['FLAIR'].to(device)
+        labels = batch['Label'].to(device)
         
         # clear the old gradients from optimizer
         optimizer.zero_grad()
         
         # forward pass: feed inputs to the model to get outputs
-        linear_output,output = model(inputs)
+        linear_output,output = model(T1,T1_ce,T2,FLAIR)
         
         # calculate the training batch loss
-        loss = criterion(output, torch.max(labels, 1)[1])
+        #loss = criterion(output, torch.max(labels, 1)[1])
+        loss = MetricAndLoss.DiceLoss(output,labels)
         
         # backward: perform gradient descent of the loss w.r. to the model params
         loss.backward()
@@ -108,7 +105,7 @@ for epoch in range(num_epochs):
         train_loss += loss.item()
         
         # update training log
-        trainLog.BatchUpdate(epoch,output,linear_output,labels)
+        #trainLog.BatchUpdate(epoch,output,linear_output,labels)
 
             
     #######################
@@ -124,20 +121,24 @@ for epoch in range(num_epochs):
     with torch.no_grad():
         for batch in validation_loader:
             # get batch images and labels
-            inputs = batch['image'].to(device)
-            labels = batch['label'].to(device)
+            T1 = batch['T1'].to(device)
+            T1_ce = batch['T1 ce'].to(device)
+            T2 = batch['T2'].to(device)
+            FLAIR = batch['FLAIR'].to(device)
+            labels = batch['Label'].to(device)
             
             # forward pass
-            linear_output,output = model(inputs)
+            linear_output,output = model(T1,T1_ce,T2,FLAIR)
             
             # validation batch loss
-            loss = criterion(output, torch.max(labels, 1)[1]) 
+            #loss = criterion(output, torch.max(labels, 1)[1]) 
+            loss = MetricAndLoss.DiceLoss(output,labels)
             
             # accumulate the valid_loss
             valid_loss += loss.item()
             
             # update validation log
-            validationLog.BatchUpdate(epoch,output,linear_output,labels)
+            #validationLog.BatchUpdate(epoch,output,linear_output,labels)
                 
     #########################
     ## PRINT EPOCH RESULTS ##
@@ -145,8 +146,8 @@ for epoch in range(num_epochs):
     train_loss /= len(train_loader)
     valid_loss /= len(validation_loader)
     # update training and validation loss
-    trainLog.EpochUpdate(epoch,train_loss)
-    validationLog.EpochUpdate(epoch,valid_loss)
+    #trainLog.EpochUpdate(epoch,train_loss)
+    #validationLog.EpochUpdate(epoch,valid_loss)
     # print results
     print('Epoch: %s/%s: Training loss: %.3f. Validation Loss: %.3f.'
           % (epoch+1,num_epochs,train_loss,valid_loss))
