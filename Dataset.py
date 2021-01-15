@@ -1,13 +1,12 @@
 # Dataset.py
 import os
-import cv2
 import numpy as np
 import nibabel as nib
 import pandas as pd
+import matplotlib.pyplot as plt
 import torch
 import torch.cuda
 from torch.utils.data import Dataset
-import torch.nn.functional as F
 from torchvision import transforms
 
 
@@ -126,3 +125,16 @@ class DatasetMRI(Dataset):
             transforms.ToTensor()])
         
         return None
+    
+    #%% The following function get a instance of a scan and present it in 
+    def getScan(self,scan_type,idx):
+        # read the modality and number of patient
+        path = self.table[scan_type].iloc[idx]
+        scan = nib.load(path).get_fdata()
+        
+        return scan
+        
+        
+        
+        
+        

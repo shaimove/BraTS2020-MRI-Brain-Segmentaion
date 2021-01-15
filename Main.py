@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import nibabel as nib
 import torch
 from torch.utils import data
 
@@ -57,7 +58,7 @@ learning_rate = 0.01
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # define loss function 
-criterion = torch.nn.CrossEntropyLoss()
+#criterion = torch.nn.CrossEntropyLoss()
 criterion = MetricAndLoss.DiceLoss()
 
 # initiate logs
