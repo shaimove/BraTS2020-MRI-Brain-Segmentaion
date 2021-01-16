@@ -2,9 +2,6 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix,ConfusionMatrixDisplay
-
-
 
 class ClassificationLog(object):
     '''
@@ -17,7 +14,6 @@ class ClassificationLog(object):
     def __init__(self):
         
         self.output = []
-        self.linear_output = []
         self.labels = []
         self.loss = []
         self.epoch = -1
@@ -83,21 +79,11 @@ class ClassificationLog(object):
     
     def getLabels(self,epoch=-1):
         return self.labels[epoch]
-    
-    def getLinearOutput(self,epoch=-1):
-        return self.linear_output[epoch]
-        
+
     def getLoss(self,epoch=-1):
         return self.loss[epoch]
     
-    # Plot confusion matrix
-    def PlotConfusionMatrix(self,classes,epoch=-1):
-        y_true  = np.argmax(self.labels[epoch],axis=1)
-        y_pred = np.argmax(self.output[epoch],axis=1)
-        cm = confusion_matrix(y_true, y_pred)
-        disp = ConfusionMatrixDisplay(cm)
-        
-        disp.plot()
+
         
         
         

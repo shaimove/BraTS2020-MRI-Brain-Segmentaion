@@ -59,7 +59,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # define loss function 
 #criterion = torch.nn.CrossEntropyLoss()
-criterion = MetricAndLoss.DiceLoss()
+#criterion = MetricAndLoss.DiceLoss()
 
 # initiate logs
 trainLog = ClassificationLog()
@@ -80,18 +80,17 @@ for epoch in range(num_epochs):
     
     for batch in train_loader:
         # get batch images and labels
-        T1 = batch['T1'].to(device)
-        T1_ce = batch['T1 ce'].to(device)
-        T2 = batch['T2'].to(device)
-        FLAIR = batch['FLAIR'].to(device)
-        labels = batch['Label'].to(device)
-        print(T1.shape)
-        
+        T1 = batch['T1'].float().to(device)
+        T1_ce = batch['T1 ce'].float().to(device)
+        T2 = batch['T2'].float().to(device)
+        FLAIR = batch['FLAIR'].float().to(device)
+        labels = batch['Label'].float().to(device)
+
         # clear the old gradients from optimizer
         optimizer.zero_grad()
         
         # forward pass: feed inputs to the model to get outputs
-        linear_output,output = model(T1,T1_ce,T2,FLAIR)
+        output = model(T1,T1_ce,T2,FLAIR)
         
         # calculate the training batch loss
         #loss = criterion(output, torch.max(labels, 1)[1])
@@ -130,7 +129,7 @@ for epoch in range(num_epochs):
             labels = batch['Label'].to(device)
             
             # forward pass
-            linear_output,output = model(T1,T1_ce,T2,FLAIR)
+            output = model(T1,T1_ce,T2,FLAIR)
             
             # validation batch loss
             #loss = criterion(output, torch.max(labels, 1)[1]) 
