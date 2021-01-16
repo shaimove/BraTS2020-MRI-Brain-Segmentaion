@@ -20,7 +20,7 @@ The output was annotations of different kind of brain tissues:
 4 - enhancing tumor (ET)
 
 see an example for T1-weighted, T2-weighted, and FLAIR images. 
-![Image 1](https://github.com/shaimove/Brain-Tumor-Classification--MRI-/blob/main/Results/Version%200.2%20after%20100%20epochs.png)
+![Image 1](https://github.com/shaimove/BraTS2020-MRI-Brain-Segmentaion/blob/main/Images/modalities.jpg)
 
 see an example of the difference between T1-weighted and T1-weighted with contrast:
 ![Image 2](https://github.com/shaimove/BraTS2020-MRI-Brain-Segmentaion/blob/main/Images/modalities.jpg)
