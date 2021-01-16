@@ -14,9 +14,9 @@ The input to 3D-U-net is 4 modalities of MRI scan:
 4. FLAIR scan (T2 Fluid Attenuated Inversion Recovery)
 
 The output was annotations of different kind of brain tissues:
-0 - Everything else
-1 - necrotic (NCR) and the non-enhancing (NET) tumor core
-2 - peritumoral edema (ED)
+0 - Everything else,
+1 - necrotic (NCR) and the non-enhancing (NET) tumor core,
+2 - peritumoral edema (ED),
 4 - enhancing tumor (ET)
 
 see an example for T1-weighted, T2-weighted, and FLAIR images. 
