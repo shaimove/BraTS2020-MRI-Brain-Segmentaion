@@ -3,83 +3,62 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
-class ClassificationLog(object):
+class SegmentationLoss(object):
     '''
-        The following class track the results of training loop for classification
-        deep neural network, save the output of the network, linear output before 
-        softmax operation, labels (ground truth) and loss. 
-        The object is save the data for every epoch, and update at the end of 
-        every bacth and every epoch.
+        The following class track the results of training loop for segmentation
+        of 3D Brain MRI scans (T1, T1 ce, T2, FLAIR) with target segmentaiton 
+        of 4 labels: None, NCR, ED, ET.
+        Since the files are very large, we won't sacve the results, only track 
+        the loss value for every batch and every epoch, for both training and 
+        validation steps. 
     '''
     def __init__(self):
         
-        self.output = []
-        self.labels = []
-        self.loss = []
+        self.running_batch_loss = []
+        self.loss_batch = []
+        self.loss_epoch = []
         self.epoch = -1
         
         return None
     
-    def BatchUpdate(self,epoch,output,linear_output,labels):
+    def BatchUpdate(self,epoch,batch,loss):
         '''
-        Update all status vectors after every batch. 
-        Every epoch is stored in a new element in list, when a new epoch
-        Starts, using self.epoch indicator, we append new numpy array to every 
-        list, when didn't start a new epoch, we stack the results in row axis
-        to the current epoch. 
+        Update batch loss, of dice score. 
+        when a new epoch starts, using self.epoch indicator, we store the recorded
+        losses and create new list of running losses. 
 
         Parameters
         ----------
-        epoch : integer, 0 to number of epochs
-        output : integer numpy array, size (samples,labels)
-        linear_outputs : float32 numpy array, size (samples,labels)
-        labels : integer numpy array, size (samples,labels)
+        epoch : integer, 0 to number of epochs-1
+        batch : integer, int 0 to number of batchs per epoch-1
+        loss : float32 Tensor size 1, loss of Dice score
 
         '''
         # Step 1: Transform all the data to CPU and Numpy array
-        output = output.to('cpu').detach().numpy()
-        linear_output = linear_output.to('cpu').detach().numpy()
-        labels = labels.to('cpu').detach().numpy()
-        
-        
-        # Step 2: If we started new epoch, than only append new numpy arrays
+        loss = loss.to('cpu').detach().numpy()
+
+        # Step 2: If we started new epoch
         if epoch != self.epoch:
-            # we are at a new epoch, append instead of stack
-            self.output.append(output)
-            self.linear_output.append(linear_output)
-            self.labels.append(labels)
+            # we are at a new epoch, store all previous batchs loss
+            self.loss_batch.append(self.running_batch_loss)
             
+            # restart the running batch loss
+            self.running_batch_loss = []
+
             # update epoch number
             self.epoch = epoch
         
-        
-        # Step 3: If we already started the epoch, only stack the new data to current data
         else:
-            # we only need to stack the results 
-            output_new = np.vstack((self.output[epoch],output))
-            self.output[epoch] = output_new
-        
-            linear_output_new = np.vstack((self.linear_output[epoch],linear_output))
-            self.linear_output[epoch] = linear_output_new
-            
-            labels_new = np.vstack((self.labels[epoch],labels))
-            self.labels[epoch] = labels_new
+            # append loss 
+            self.running_batch_loss.append(loss)
         
         return self
             
     def EpochUpdate(self,epoch,loss):
         # we only need to update the loss
         self.loss.append(loss)
-        
         return self 
     
-    # function to return the output,labels,linear_output,loss
-    def getOutput(self,epoch=-1):
-        return self.output[epoch]
-    
-    def getLabels(self,epoch=-1):
-        return self.labels[epoch]
-
     def getLoss(self,epoch=-1):
         return self.loss[epoch]
     

@@ -10,7 +10,7 @@ import model
 import utils
 import MetricAndLoss
 from Dataset import DatasetMRI
-from Log import ClassificationLog
+from Log import SegmentationLoss
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -33,8 +33,8 @@ Dict_stats = utils.CalculateStats(tableTraining,True)
 
 #%% Create dataset and data loade
 # define batch size
-batch_size_train = 1
-batch_size_validation = 1
+batch_size_train = 2
+batch_size_validation = 2
 
 # define dataset and dataloader for training
 train_dataset = DatasetMRI(tableTraining,Dict_stats)
@@ -58,12 +58,11 @@ learning_rate = 0.01
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # define loss function 
-#criterion = torch.nn.CrossEntropyLoss()
 #criterion = MetricAndLoss.DiceLoss()
 
 # initiate logs
-trainLog = ClassificationLog()
-validationLog = ClassificationLog()
+trainLog = SegmentationLoss()
+validationLog = SegmentationLoss()
 
 #%% Training
 
@@ -78,13 +77,13 @@ for epoch in range(num_epochs):
     # initiate training loss
     train_loss = 0
     
-    for batch in train_loader:
+    for i,batch in enumerate(train_loader):
         # get batch images and labels
-        T1 = batch['T1'].float().to(device)
-        T1_ce = batch['T1 ce'].float().to(device)
-        T2 = batch['T2'].float().to(device)
-        FLAIR = batch['FLAIR'].float().to(device)
-        labels = batch['Label'].float().to(device)
+        T1 = batch['T1'].to(device)
+        T1_ce = batch['T1 ce'].to(device)
+        T2 = batch['T2'].to(device)
+        FLAIR = batch['FLAIR'].to(device)
+        labels = batch['Label'].to(device)
 
         # clear the old gradients from optimizer
         optimizer.zero_grad()
@@ -106,7 +105,8 @@ for epoch in range(num_epochs):
         train_loss += loss.item()
         
         # update training log
-        #trainLog.BatchUpdate(epoch,output,linear_output,labels)
+        print('Batch %d / %d, loss: %.3f' % (i,len(train_loader),loss))
+        trainLog.BatchUpdate(epoch,i,loss)
 
             
     #######################
@@ -120,7 +120,7 @@ for epoch in range(num_epochs):
     
     # turn off gradients for validation
     with torch.no_grad():
-        for batch in validation_loader:
+        for i,batch in enumerate(validation_loader):
             # get batch images and labels
             T1 = batch['T1'].to(device)
             T1_ce = batch['T1 ce'].to(device)
@@ -139,7 +139,8 @@ for epoch in range(num_epochs):
             valid_loss += loss.item()
             
             # update validation log
-            #validationLog.BatchUpdate(epoch,output,linear_output,labels)
+            print('Batch %d / %d, loss: %.3f' % (i,len(validation_loader),loss))
+            validationLog.BatchUpdate(epoch,i,loss)
                 
     #########################
     ## PRINT EPOCH RESULTS ##
@@ -147,8 +148,8 @@ for epoch in range(num_epochs):
     train_loss /= len(train_loader)
     valid_loss /= len(validation_loader)
     # update training and validation loss
-    #trainLog.EpochUpdate(epoch,train_loss)
-    #validationLog.EpochUpdate(epoch,valid_loss)
+    trainLog.EpochUpdate(epoch,train_loss)
+    validationLog.EpochUpdate(epoch,valid_loss)
     # print results
     print('Epoch: %s/%s: Training loss: %.3f. Validation Loss: %.3f.'
           % (epoch+1,num_epochs,train_loss,valid_loss))

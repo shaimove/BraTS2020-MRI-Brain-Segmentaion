@@ -53,10 +53,10 @@ class DatasetMRI(Dataset):
         mask = self.preprocess_mask(mask)
         
         # preform transforms for every type of imaging and mask
-        T1 = self.transformT1(T1).unsqueeze(0)
-        T1_ce = self.transformT1_ce(T1_ce).unsqueeze(0)
-        T2 = self.transformT2(T2).unsqueeze(0)
-        FLAIR = self.transformFLAIR(FLAIR).unsqueeze(0)
+        T1 = self.transformT1(T1).unsqueeze(0).float()
+        T1_ce = self.transformT1_ce(T1_ce).unsqueeze(0).float()
+        T2 = self.transformT2(T2).unsqueeze(0).float()
+        FLAIR = self.transformFLAIR(FLAIR).unsqueeze(0).float()
             
         # create dictionary
         sample = {'T1': T1, 'T1 ce': T1_ce, 'T2': T2, 'FLAIR': FLAIR, 'Label': mask}
@@ -90,7 +90,7 @@ class DatasetMRI(Dataset):
         mask = np.transpose(mask, (0, 3, 1, 2))
         
         # transform to pytorch tensor
-        mask = torch.from_numpy(mask)
+        mask = torch.from_numpy(mask).float()
         
         return mask
     
