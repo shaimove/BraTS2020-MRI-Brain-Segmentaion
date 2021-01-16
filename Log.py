@@ -59,8 +59,8 @@ class SegmentationLoss(object):
         self.loss_epoch.append(loss)
         return self 
     
-    def getLoss(self,epoch=-1):
-        return self.loss[epoch]
+    def getLoss(self):
+        return self.loss_epoch
     
 
         

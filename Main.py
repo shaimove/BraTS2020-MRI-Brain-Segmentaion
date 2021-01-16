@@ -158,5 +158,22 @@ for epoch in range(num_epochs):
     print('Epoch: %s/%s: Training loss: %.3f. Validation Loss: %.3f.'
           % (epoch+1,num_epochs,train_loss,valid_loss))
  
-    
+#%% Save the model
+PATH = '../model_16_01_2020_3D_U_net.pt'
+train_loss = trainLog.getLoss()
+validation_loss = validationLog.getLoss()
+torch.save({'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'train_loss': train_loss,
+            'validation_loss': validation_loss}, PATH)
+            
+#%% Load the model
+if False:
+    PATH = '../model_16_01_2020_3D_U_net.pt'
+    checkpoint = torch.load(PATH)
+    import model
+    model2 = model.MRIModel()
+    model2.load_state_dict(checkpoint['model_state_dict'])
+
     
