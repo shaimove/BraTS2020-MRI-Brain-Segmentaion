@@ -56,7 +56,7 @@ class SegmentationLoss(object):
             
     def EpochUpdate(self,epoch,loss):
         # we only need to update the loss
-        self.loss.append(loss)
+        self.loss_epoch.append(loss)
         return self 
     
     def getLoss(self,epoch=-1):

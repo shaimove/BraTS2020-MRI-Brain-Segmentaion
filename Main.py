@@ -42,7 +42,7 @@ train_loader = data.DataLoader(train_dataset,batch_size=batch_size_train,shuffle
 
 # define dataset and dataloader for validation
 validation_dataset = DatasetMRI(tableValidation,Dict_stats)
-validation_loader = data.DataLoader(train_dataset,batch_size=batch_size_validation,shuffle=True)
+validation_loader = data.DataLoader(validation_dataset,batch_size=batch_size_validation,shuffle=True)
 
 
 #%% Define parameters
@@ -76,15 +76,16 @@ for epoch in range(num_epochs):
     
     # initiate training loss
     train_loss = 0
+    i = 0 # index for log
     
-    for i,batch in enumerate(train_loader):
+    for batch in train_loader:
         # get batch images and labels
         T1 = batch['T1'].to(device)
         T1_ce = batch['T1 ce'].to(device)
         T2 = batch['T2'].to(device)
         FLAIR = batch['FLAIR'].to(device)
         labels = batch['Label'].to(device)
-
+        
         # clear the old gradients from optimizer
         optimizer.zero_grad()
         
@@ -107,6 +108,7 @@ for epoch in range(num_epochs):
         # update training log
         print('Batch %d / %d, loss: %.3f' % (i,len(train_loader),loss))
         trainLog.BatchUpdate(epoch,i,loss)
+        i += 1 # update index
 
             
     #######################
@@ -117,10 +119,11 @@ for epoch in range(num_epochs):
     
     # initiate validation loss
     valid_loss = 0
+    i = 0 # index for Log
     
     # turn off gradients for validation
     with torch.no_grad():
-        for i,batch in enumerate(validation_loader):
+        for batch in validation_loader:
             # get batch images and labels
             T1 = batch['T1'].to(device)
             T1_ce = batch['T1 ce'].to(device)
@@ -141,6 +144,7 @@ for epoch in range(num_epochs):
             # update validation log
             print('Batch %d / %d, loss: %.3f' % (i,len(validation_loader),loss))
             validationLog.BatchUpdate(epoch,i,loss)
+            i += 1 # update loss 
                 
     #########################
     ## PRINT EPOCH RESULTS ##
