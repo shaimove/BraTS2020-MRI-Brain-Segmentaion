@@ -39,12 +39,18 @@ In total, the model contains 6,156,692 trainable parameters and was written with
 ## Dataset, Log, Loss, GPU
 I used a custom dataset class, which loads and transform the images only at training time, I created a utils.py code that stores all the paths to the files, resolutions, and 
 pixel statistics to a CSV file, called Training Data Table.csv.
+
 For each modality with a size of 240x240x155, every scan is registered (as viewed by Slicer program).
+
 For every modality, I computed the mean and std for the whole training set (80-20 split) and normalize the data according to Z-score normalization (mean 0 std 1). 
 For training 269 examples (with 4 scans + annotations), and 100 validation examples. 
+
 No data augmentation was performed, since I can't assume that MRI images could be found in clinical settings, with any augmentation method. 
+
 I used a simple log to collected the loss for every batch and epoch in both training and validation processes.
+
 I used a simple Adam optimizer with a learning rate of 0.01, I used a batch size of 2 on GeForce RTX™ 3090 GPU. 
+
 I used the Dice score for loss and optimization (see the explanation: https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient), the loss is the (1-score).
 
 ## License
