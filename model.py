@@ -5,7 +5,7 @@ from torch import nn as nn
 #%% ResNet50
 
 class MRIModel(nn.Module):
-    def __init__(self, in_channels=1,out_channels=4):
+    def __init__(self, in_channels=1,bridge_channels=32,out_channels=4):
         super().__init__()
         
         # Encoder
@@ -22,9 +22,15 @@ class MRIModel(nn.Module):
         self.encoderFLAIR = EncoderBlock(in_channels)
         
         # Bridge Block that unite all modules
-        
+        self.bridge = BridgeBlock(4*bridge_channels)
         
         # Decoder Block with shortcuts 
+        self.decoder = DecoderBlock(8*bridge_channels,bridge_channels)
+                
+        # conv + softmax to labels
+        self.lastconv = nn.Conv3d(bridge_channels/2,out_channels,kernel_size=(3,3,3),padding=1)
+        self.softmax = nn.Softmax(dim=1)
+        
         
         # initialize weights
         self._init_weights()
@@ -46,7 +52,7 @@ class MRIModel(nn.Module):
                 if m.bias is not None:
                     m.bias.data.fill_(0.01) 
     
-    def forward(self, T1,T1_ce,T2,FLAIR):
+    def forward(self,T1,T1_ce,T2,FLAIR):
         # Run the encoder from all moduales 
         T1_reduced,T1_Shortcuts = self.encoderT1(T1)
         T1_ce_reduced,T1_ce_Shortcuts = self.encoderT1_ce(T1_ce)
@@ -54,10 +60,15 @@ class MRIModel(nn.Module):
         FLAIR_reduced,FLAIR_Shortcuts =  self.encoderFLAIR(FLAIR)
         
         # combine all moduales and run the bridge
-        bridge = torch.cat([T1_reduced,T1_ce_reduced,T2_reduced,FLAIR_reduced], dim=1)
-        
+        X = torch.cat([T1_reduced,T1_ce_reduced,T2_reduced,FLAIR_reduced], dim=1)
+        X = self.bridge(X)
         
         # Run decoder for bridge and shortcuts
+        X = self.decoder(X)
+        
+        # conv + softmax to labels
+        X = self.lastconv(X)
+        output = self.softmax(X)
         
         return output
         
@@ -69,24 +80,24 @@ class EncoderBlock(nn.Module):
         super().__init__()
         
         # Encoder
-        # ConvBlock 1: from (N*1*240*240*155) to (N*2*120*120*77)
-        self.block1 = ConvBlock(in_channels)
+        # ConvBlock 1: from (N*1*240*240*155) to (N*2*120*120*78)
+        self.block1 = ConvBlock(in_channels,padd_maxpool=(1,0,0))
         
-        # ConvBlock 2: from (N*2*120*120*77) to (N*4*60*60*38)
-        self.block2 = ConvBlock(2*in_channels)
+        # ConvBlock 2: from (N*2*120*120*78) to (N*4*60*60*39)
+        self.block2 = ConvBlock(2*in_channels,padd_maxpool=(0,0,0))
         
-        # ConvBlock 3: from (N*4*60*60*38) to (N*8*30*30*19)
-        self.block3 = ConvBlock(4*in_channels)
+        # ConvBlock 3: from (N*4*60*60*39) to (N*8*30*30*20)
+        self.block3 = ConvBlock(4*in_channels,padd_maxpool=(1,0,0))
         
-        # ConvBlock 4: from (N*8*30*30*19) to (N*16*15*15*10)
-        self.block4 = ConvBlock(8*in_channels)
+        # ConvBlock 4: from (N*8*30*30*20) to (N*16*15*15*10)
+        self.block4 = ConvBlock(8*in_channels,padd_maxpool=(0,0,0))
         
         # ConvBlock 5: from (N*16*15*15*10) to (N*32*7*7*5)
-        self.block5 = ConvBlock(16*in_channels)
+        self.block5 = ConvBlock(16*in_channels,padd_maxpool=(0,0,0))
         
         # Shortcut sizes
-        # X_L1 = (N*2*240*240*155), X_L2 = (N*4*120*120*77)
-        # X_L3 = (N*8*60*60*38), X_L4 = (N*16*30*30*19)
+        # X_L1 = (N*2*240*240*155), X_L2 = (N*4*120*120*78)
+        # X_L3 = (N*8*60*60*39), X_L4 = (N*16*30*30*20)
         # X_L5 = (N*32*15*15*10)
         
     def forward(self,X):
@@ -104,7 +115,7 @@ class EncoderBlock(nn.Module):
 #%% Convolutional Block
 class ConvBlock(nn.Module):
 
-    def __init__(self,input_size):
+    def __init__(self,input_size,padd_maxpool = 0):
         super().__init__()
         # C = input_size
         
@@ -119,8 +130,8 @@ class ConvBlock(nn.Module):
         self.relu2 = nn.ReLU(inplace=True)
         
         # MaxPooling layer
-        # From (N * 2C * D * H * W) to (N * 2C * D/2-1 * H/2 * W/2)
-        self.maxpool = nn.MaxPool3d(kernel_size=2, stride=2)
+        # From (N * 2C * D * H * W) to (N * 2C * D/2(-/+1) * H/2 * W/2)
+        self.maxpool = nn.MaxPool3d(kernel_size=2, stride=2,padding=padd_maxpool)
     
     def forward(self,X):
         
@@ -143,43 +154,49 @@ class ConvBlock(nn.Module):
         
 #%% Decoder Block        
 class DecoderBlock(nn.Module):
-    def __init__(self,input_size):
+    def __init__(self,input_size,shortcut_size):
         super().__init__()
         # input_size = 256
+        # shortcut_size = 32
         # Round 1:
         # Upconv: from (N * 256 * 7 * 7 * 5) to (N * 256 * 15 * 15 * 10)
         # Concatenate with all X_L5 to (N * 384 * 15 * 15 * 10)
         # regular convolution to (N * 128 * 15 * 15 * 10)
-        self.upconvblock1 = UpConvBlock(input_size,32,output_padding=(1,2,2))
+        self.upconvblock1 = UpConvBlock(input_size,shortcut_size,
+                                        output_padding=(1,0,0),
+                                        padding=(1,0,0))
         
         # Round 2:
-        # Upconv: from (N * 128 * 15 * 15 * 10) to (N * 128 * 30 * 30 * 19)
-        # Concatenate with all X_L4 to (N * 192 * 30 * 30 * 19)
-        # regular convolution to (N * 64 * 30 * 30 * 19)
-        self.upconvblock2 = UpConvBlock(input_size/2,16,output_padding=())
+        # Upconv: from (N * 128 * 15 * 15 * 10) to (N * 128 * 30 * 30 * 20)
+        # Concatenate with all X_L4 to (N * 192 * 30 * 30 * 20)
+        # regular convolution to (N * 64 * 30 * 30 * 20)
+        self.upconvblock2 = UpConvBlock(input_size/2,shortcut_size/2,
+                                        output_padding=(1,1,1),
+                                        padding=(1,1,1))
         
         # Round 3:
-        # Upconv: from (N * 64 * 30 * 30 * 19) to (N * 64 * 60 * 60 * 38)
-        
-        # Concatenate with all X_L3 to (N * 96 * 60 * 60 * 38)
-        
-        # regular convolution to (N * 32 * 60 * 60 * 38)
-        
+        # Upconv: from (N * 64 * 30 * 30 * 20) to (N * 64 * 60 * 60 * 39)
+        # Concatenate with all X_L3 to (N * 96 * 60 * 60 * 39)
+        # regular convolution to (N * 32 * 60 * 60 * 39)
+        self.upconvblock3 = UpConvBlock(input_size/4,shortcut_size/4,
+                                        output_padding=(0,1,1),
+                                        padding=(1,1,1))
         
         # Round 4:
-        # Upconv: from (N * 32 * 60 * 60 * 38) to (N * 32 * 120 * 120 * 77)
-        
-        # Concatenate with all X_L2 to (N * 48 * 120 * 120 * 77)
-        
-        # regular convolution to (N * 16 * 120 * 120 * 77)
-        
+        # Upconv: from (N * 32 * 60 * 60 * 39) to (N * 32 * 120 * 120 * 78)
+        # Concatenate with all X_L2 to (N * 48 * 120 * 120 * 78)
+        # regular convolution to (N * 16 * 120 * 120 * 78)
+        self.upconvblock4 = UpConvBlock(input_size/8,shortcut_size/8,
+                                        output_padding=(1,1,1),
+                                        padding=(1,1,1))
         
         # Round 5:
-        # Upconv: from (N * 16 * 120 * 120 * 77) to (N * 16 * 240 * 240 * 155)
-        
+        # Upconv: from (N * 16 * 120 * 120 * 78) to (N * 16 * 240 * 240 * 155)
         # Concatenate with all X_L2 to (N * 24 * 240 * 240 * 155)
-        
         # regular convolution to (N * 4 * 240 * 240 * 55)
+        self.upconvblock5 = UpConvBlock(input_size/16,shortcut_size/16,
+                                        output_padding=(0,1,1),
+                                        padding=(1,1,1))
     
     def forward(self,X,T1_Shortcuts,T1_ce_Shortcuts,T2_Shortcuts,FLAIR_Shortcuts):
         # Round 1: 
@@ -213,23 +230,26 @@ class DecoderBlock(nn.Module):
 
 class UpConvBlock(nn.Module):
     
-    def __init__(self,input_size,shortcut_size,output_padding):
+    def __init__(self,input_size,shortcut_size,output_padding,padding):
         super().__init__()
         
         # upconv
-        self.upconv1 = nn.ConvTranspose3d(input_size,input_size,kernel_size=3,
-                                          stride=2,output_padding=output_padding)
-        
-        # define number of concated channels
-        self.shortcut_size = shortcut_size
+        self.upconv1 = nn.ConvTranspose3d(input_size,input_size,
+                                          kernel_size=3,stride=2,
+                                          padding = padding,
+                                          output_padding=output_padding)
         
         # conv1
-        self.conv1 = nn.Conv2d(input_size + self.shortcut_size*4,self.shortcut_size*4,
+        self.conv1 = nn.Conv3d(input_size + shortcut_size*4,shortcut_size*4,
                                kernel_size = 3, padding = 1)
+        self.bn1 = nn.BatchNorm3d(shortcut_size*4)
+        self.relu1 = nn.ReLU(inplace=True)
         
         # conv2
-        self.conv2 = nn.Conv2d(self.shortcut_size*4,self.shortcut_size*4,
+        self.conv2 = nn.Conv3d(shortcut_size*4,shortcut_size*4,
                                kernel_size = 3, padding = 1)
+        self.bn2 = nn.BatchNorm3d(shortcut_size*4)
+        self.relu2 = nn.ReLU(inplace=True)
         
     def forward(self,X,X_shortcut):
         # upconv
@@ -238,8 +258,12 @@ class UpConvBlock(nn.Module):
         X = torch.concat([X,X_shortcut],dim = 1)
         # conv1
         X = self.conv1(X)
+        X = self.bn1(X)
+        X = self.relu1(X)
         # conv2
         X = self.conv2(X)
+        X = self.bn2(X)
+        X = self.relu2(X)
         
         return X
 
@@ -248,15 +272,28 @@ class BridgeBlock(nn.Module):
     
     def __init__(self,input_size):
         super().__init__()
-        # Input size: (N*128*32*7*7*5), After all 4 modules cocat
         
+        # Input size: (N*128*32*7*7*5), After all 4 modules cocatenate
+        # from (N*128*32*7*7*5) to (N*128*32*7*7*5)
+        self.conv1 = nn.Conv3d(input_size,input_size,kernel_size = 3, padding = 1)
+        self.bn1 = nn.BatchNorm3d(input_size)
+        self.relu1 = nn.ReLU(inplace=True)
+        
+        # from (N*128*32*7*7*5) to (N*256*32*7*7*5)
+        self.conv2 = nn.Conv3d(input_size,2*input_size,kernel_size = 3, padding = 1)
+        self.bn2 = nn.BatchNorm3d(2*input_size)
+        self.relu2 = nn.ReLU(inplace=True)
+        
+        
+    def forward(self,X):
+        # Part 1 
+        X = self.conv1(X)
+        X = self.bn1(X)
+        X = self.relu1(X)
+        # Part 2 
+        X = self.conv2(X)
+        X = self.bn2(X)
+        X = self.relu2(X)
+        
+        return X
     
-     
-        
-        
-        
-        
-        
-        
-        
-        

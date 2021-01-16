@@ -51,13 +51,20 @@ class DatasetMRI(Dataset):
         mask = self.table['seg path'].iloc[idx]
         mask = self.preprocess_mask(mask)
         
+        # Transform to float32 tensor with 4 dimensions
+        T1 = torch.from_numpy(T1,dtype=torch.float32).unsqueeze(0).permute(0,3,1,2)
+        T1_ce = torch.from_numpy(T1_ce,dtype=torch.float32).unsqueeze(0).permute(0,3,1,2)
+        T2 = torch.from_numpy(T2,dtype=torch.float32).unsqueeze(0).permute(0,3,1,2)
+        FLAIR = torch.from_numpy(FLAIR,dtype=torch.float32).unsqueeze(0).permute(0,3,1,2)
+        mask = torch.from_numpy(mask,dtype=torch.float32).unsqueeze(0).permute(0,3,1,2)
+        
         # preform transforms for every type of imaging and mask
         if self.transform:
             T1 = self.transformT1(T1)
             T1_ce = self.transformT1_ce(T1_ce)
             T2 = self.transformT2(T2)
             FLAIR = self.transformFLAIR(FLAIR)
-            mask = self.transformMask(mask)
+            #mask = self.transformMask(mask)
             
         # create dictionary
         sample = {'T1': T1, 'T1 ce': T1_ce, 'T2': T2, 'FLAIR': FLAIR, 'Label': mask}
@@ -67,6 +74,8 @@ class DatasetMRI(Dataset):
 
     #%% the following function create mask with one-hot-encoding type
     def preprocess_mask(self,mask):
+        # expand dim of mask
+        mask = np.expand_dims(mask,axis=0)
         
         # label 0 - None
         mask_None = np.zeros(mask.shape)
@@ -84,8 +93,8 @@ class DatasetMRI(Dataset):
         maskET = np.zeros(mask.shape)
         maskET[mask == 4] = 1
         
-        # Stack the masks: output is 240*240*155*4
-        mask = np.stack([mask_None, maskNCR, maskED,maskET])
+        # Stack the masks: output is 4*240*240*155
+        mask = np.stack([mask_None, maskNCR, maskED,maskET],axis=0)
         
         return mask
     
@@ -96,28 +105,24 @@ class DatasetMRI(Dataset):
         mean,std = self.dict_stats['T1'][0],self.dict_stats['T1'][0]
         
         self.transformT1 = transforms.Compose([
-            transforms.ToTensor(),
             transforms.Normalize(mean=[mean],std=[std])])
                 
         # For T1 ce : get mean and std
         mean,std = self.dict_stats['T1 ce'][0],self.dict_stats['T1 ce'][0]
         
         self.transformT1_ce = transforms.Compose([
-            transforms.ToTensor(),
             transforms.Normalize(mean=[mean],std=[std])])
         
         # For T2 : get mean and std
         mean,std = self.dict_stats['T2'][0],self.dict_stats['T2'][0]
         
         self.transformT2 = transforms.Compose([
-            transforms.ToTensor(),
             transforms.Normalize(mean=[mean],std=[std])])
         
         # For FLAIR : get mean and std
         mean,std = self.dict_stats['FLAIR'][0],self.dict_stats['FLAIR'][0]
         
         self.transformFLAIR = transforms.Compose([
-            transforms.ToTensor(),
             transforms.Normalize(mean=[mean],std=[std])])
         
         # For mask

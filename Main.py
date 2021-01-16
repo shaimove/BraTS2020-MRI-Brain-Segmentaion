@@ -85,6 +85,7 @@ for epoch in range(num_epochs):
         T2 = batch['T2'].to(device)
         FLAIR = batch['FLAIR'].to(device)
         labels = batch['Label'].to(device)
+        print(T1.shape)
         
         # clear the old gradients from optimizer
         optimizer.zero_grad()
