@@ -63,7 +63,8 @@ The code is free for any use.
 
 ## Contact Information
 This repo and code were written by Sharon Haimov, Research Engineer at Lumenis ltd. 
-email: sharon.haimov@lumenis.com or shaimove@gmail.com
+
+Email: sharon.haimov@lumenis.com or shaimove@gmail.com
 
 ## Reference
 [1] B. H. Menze, A. Jakab, S. Bauer, J. Kalpathy-Cramer, K. Farahani, J. Kirby, et al. "The Multimodal Brain Tumor Image Segmentation Benchmark (BRATS)", IEEE Transactions on Medical Imaging 34(10), 1993-2024 (2015) DOI: 10.1109/TMI.2014.2377694
