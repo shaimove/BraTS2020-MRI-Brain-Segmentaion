@@ -177,10 +177,11 @@ if False:
     model2.load_state_dict(checkpoint['model_state_dict'])
 
 #%%
+
 plt.figure()
 plt.plot(range(num_epochs),train_loss,label='Training Loss')
 plt.plot(range(num_epochs),validation_loss,label='Vlidation Loss')
 plt.grid(); plt.xlabel('Number of epochs'); plt.ylabel('Loss')
 plt.title('Loss for 3D-Unet for BraTS2020 Brain MRI Segmentation')
-
+plt.legend()
 

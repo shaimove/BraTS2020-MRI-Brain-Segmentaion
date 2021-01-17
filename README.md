@@ -53,16 +53,24 @@ I used a simple Adam optimizer with a learning rate of 0.01, I used a batch size
 
 I used the Dice score for loss and optimization (see the explanation: https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient), the loss is the (1-score).
 
+## Results
+The loss decreased to about 0.01 in 1 epoch, and after 20 epochs, we didn't any change or overfitting.
+![Image 4](https://github.com/shaimove/BraTS2020-MRI-Brain-Segmentaion/blob/main/Images/loss.png)
+
+
 ## License
 The code is free for any use. 
 
 ## Contact Information
 This repo and code were written by Sharon Haimov, Research Engineer at Lumenis ltd. 
-email: sharon.haimov@lumenis.com or shaimove@gmail.com
+
+Email: sharon.haimov@lumenis.com or shaimove@gmail.com
 
 ## Reference
 [1] B. H. Menze, A. Jakab, S. Bauer, J. Kalpathy-Cramer, K. Farahani, J. Kirby, et al. "The Multimodal Brain Tumor Image Segmentation Benchmark (BRATS)", IEEE Transactions on Medical Imaging 34(10), 1993-2024 (2015) DOI: 10.1109/TMI.2014.2377694
+
 [2] S. Bakas, H. Akbari, A. Sotiras, M. Bilello, M. Rozycki, J.S. Kirby, et al., "Advancing The Cancer Genome Atlas glioma MRI collections with expert segmentation labels and radiomic features", Nature Scientific Data, 4:170117 (2017) DOI: 10.1038/sdata.2017.117
+
 [3] S. Bakas, M. Reyes, A. Jakab, S. Bauer, M. Rempfler, A. Crimi, et al., "Identifying the Best Machine Learning Algorithms for Brain Tumor Segmentation, Progression Assessment, and Overall Survival Prediction in the BRATS Challenge", arXiv preprint arXiv:1811.02629 (2018)
 
 
