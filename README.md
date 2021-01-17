@@ -28,6 +28,7 @@ see an example of the difference between T1-weighted and T1-weighted with contra
 see an example for the different annotations:
 ![Image 3](https://github.com/shaimove/BraTS2020-MRI-Brain-Segmentaion/blob/main/Images/annotations.png)
 
+According to [1]: "All mMRI volumes were re-oriented to the LPS (Left-Posterior-Superior) coordinate system, co-registered to the same T1 anatomic template, resampled to 1 mm ^ 3, voxel resolution, skull-stripped. The intensity histograms of all modalities of all patients were then matched". 
 
 ## 3D-U-Net
 After every modality (240x240x155) was filtered to (32x7x7x5) in the "Encoder section" (Not a GAN!), I concatenate all modalities together to (128x7*7x5) continue 
