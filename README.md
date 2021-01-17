@@ -58,6 +58,7 @@ I used the Dice score for loss and optimization (see the explanation: https://en
 The loss decreased to about 0.01 in 1 epoch, and after 20 epochs, we didn't any change or overfitting.
 ![Image 4](https://github.com/shaimove/BraTS2020-MRI-Brain-Segmentaion/blob/main/Images/loss%20new.png)
 
+Why the CNN converged so fast on both validation and training sets? in my opinion, it's resulted from histogram normalization. According to [1]: "Histogram normalization was then performed for the 3 pair-wise distributions considered; ED versus WM in T2-FLAIR, ET versus ED in T1-Gd, and ET versus NET in T1-Gd". If there is a significant statistical difference between different labels in voxel values, it's very easy for the CNN to detect the distribution of every label. 
 
 ## License
 The code is free for any use. 
