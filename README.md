@@ -23,7 +23,7 @@ see an example for T1-weighted, T2-weighted, and FLAIR images.
 ![Image 1](https://github.com/shaimove/BraTS2020-MRI-Brain-Segmentaion/blob/main/Images/modalities.jpg)
 
 see an example of the difference between T1-weighted and T1-weighted with contrast:
-![Image 2](https://github.com/shaimove/BraTS2020-MRI-Brain-Segmentaion/blob/main/Images/modalities.jpg)
+![Image 2](https://github.com/shaimove/BraTS2020-MRI-Brain-Segmentaion/blob/main/Images/t1%20and%20t1%20contrast.png)
 
 see an example for the different annotations:
 ![Image 3](https://github.com/shaimove/BraTS2020-MRI-Brain-Segmentaion/blob/main/Images/annotations.png)
