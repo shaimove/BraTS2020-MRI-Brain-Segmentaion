@@ -47,14 +47,14 @@ validation_loader = data.DataLoader(validation_dataset,batch_size=batch_size_val
 
 #%% Define parameters
 # number of epochs
-num_epochs = 1
+num_epochs = 20
 
 # load model
 model = model.MRIModel().to(device)
 utils.count_parameters(model)
 
 # send parameters to optimizer
-learning_rate = 0.01
+learning_rate = 0.001
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # define loss function 
@@ -106,7 +106,7 @@ for epoch in range(num_epochs):
         train_loss += loss.item()
         
         # update training log
-        print('Batch %d / %d, loss: %.3f' % (i,len(train_loader),loss))
+        print('Epoch %d, Batch %d/%d, loss: %.4f' % (epoch,i,len(train_loader),loss))
         trainLog.BatchUpdate(epoch,i,loss)
         i += 1 # update index
 
@@ -142,7 +142,7 @@ for epoch in range(num_epochs):
             valid_loss += loss.item()
             
             # update validation log
-            print('Batch %d / %d, loss: %.3f' % (i,len(validation_loader),loss))
+            print('Epoch %d, Batch %d/%d, loss: %.4f' % (epoch,i,len(validation_loader),loss))
             validationLog.BatchUpdate(epoch,i,loss)
             i += 1 # update loss 
                 
@@ -176,4 +176,11 @@ if False:
     model2 = model.MRIModel()
     model2.load_state_dict(checkpoint['model_state_dict'])
 
-    
+#%%
+plt.figure()
+plt.plot(range(num_epochs),train_loss,label='Training Loss')
+plt.plot(range(num_epochs),validation_loss,label='Vlidation Loss')
+plt.grid(); plt.xlabel('Number of epochs'); plt.ylabel('Loss')
+plt.title('Loss for 3D-Unet for BraTS2020 Brain MRI Segmentation')
+
+
