@@ -9,7 +9,7 @@ http://braintumorsegmentation.org/
 ## Data and Task
 The input to 3D-U-net is 4 modalities of MRI scan: 
 1. T1 weighted scan
-2. Post-contrast T1-weighted scan (T1-gdb), in the code T1_ce
+2. Post-contrast T1-weighted scan (T1-Gd), in the code T1_ce
 3. T2 weighted scan
 4. FLAIR scan (T2 Fluid Attenuated Inversion Recovery)
 
