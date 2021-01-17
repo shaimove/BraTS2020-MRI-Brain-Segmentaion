@@ -55,7 +55,7 @@ I used the Dice score for loss and optimization (see the explanation: https://en
 
 ## Results
 The loss decreased to about 0.01 in 1 epoch, and after 20 epochs, we didn't any change or overfitting.
-![Image 4](https://github.com/shaimove/BraTS2020-MRI-Brain-Segmentaion/blob/main/Images/loss.png)
+![Image 4](https://github.com/shaimove/BraTS2020-MRI-Brain-Segmentaion/blob/main/Images/loss%20new.png)
 
 
 ## License
